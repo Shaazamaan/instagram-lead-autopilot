@@ -7,6 +7,7 @@
   <img alt="Cloudflare Workers" src="https://img.shields.io/badge/Cloudflare-Workers-f38020?style=for-the-badge&logo=cloudflare&logoColor=white">
   <img alt="GitHub Actions" src="https://img.shields.io/badge/GitHub-Actions-2088ff?style=for-the-badge&logo=githubactions&logoColor=white">
   <img alt="Blender" src="https://img.shields.io/badge/Blender-3D_reels-e87d0d?style=for-the-badge&logo=blender&logoColor=white">
+  <img alt="Hugging Face" src="https://img.shields.io/badge/Hugging_Face-Indic_Parler--TTS-ffd21e?style=for-the-badge&logo=huggingface&logoColor=black">
   <img alt="Instagram Graph API" src="https://img.shields.io/badge/Instagram-Graph_API-e4405f?style=for-the-badge&logo=instagram&logoColor=white">
 </p>
 
@@ -20,6 +21,7 @@ The owner's only daily job: call the leads that land in Discord.</p>
 | | |
 |---|---|
 | 🎬 **Content factory** | Scripts become 3D two-person dialogue reels (50 locations), chat reels, list reels, carousels, 4:5 posters and 9:16 stories, with TTS voice-over and covers. |
+| 🗣️ **Natural Indian voices** | Voice-overs come from AI4Bharat's open-source [Indic Parler-TTS](https://huggingface.co/ai4bharat/indic-parler-tts) model on Hugging Face. It runs free inside GitHub Actions, supports Malayalam, Hindi, Tamil and other Indian languages, and saves every line so it is never generated twice. |
 | 💬 **Comment → DM** | Every post carries a unique comment keyword. A comment triggers a private DM plus a public reply, a follow gate, then the promised resource. |
 | 🎯 **Lead qualifying** | A friendly DM chat (free Workers AI) asks your questions: need, team, traction, timeline, phone, call language. |
 | ⏰ **Check-ins** | People who go quiet get a nudge at 2 h, 9 h and 22 h, restating the exact question they stopped on. Quiet hours respected. "stop" opts out. |
@@ -71,6 +73,8 @@ node setup/gen-config.mjs
 ```
 
 Repo secrets: `CLOUDFLARE_API_TOKEN`, `IG_TOKEN`, `DISCORD_WEBHOOK`, `HF_TOKEN`. Variables: `WORKER_URL`, `IG_USER_ID`.
+
+`HF_TOKEN` is a free Hugging Face read token. The factory uses it to download the Indic Parler-TTS voice model.
 
 ## ⚠️ Battle-tested pitfalls (already handled)
 
