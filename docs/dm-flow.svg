@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="200" viewBox="0 0 1200 200" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs><linearGradient id="ig" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fa7e1e"/><stop offset="0.5" stop-color="#d62976"/><stop offset="1" stop-color="#4f5bd5"/></linearGradient></defs>
+  <rect width="1200" height="200" rx="24" fill="#14122b"/>
+  <rect x="60" y="96" width="1080" height="6" rx="3" fill="url(#ig)"/>
+  <g font-size="15" fill="#e8e6ff" text-anchor="middle">
+    <circle cx="110" cy="99" r="26" fill="#fa7e1e"/><text x="110" y="105" font-weight="800" fill="#fff">1</text>
+    <text x="110" y="150">Comments</text><text x="110" y="170">"START"</text>
+    <circle cx="300" cy="99" r="26" fill="#ec5a3f"/><text x="300" y="105" font-weight="800" fill="#fff">2</text>
+    <text x="300" y="150">Private DM +</text><text x="300" y="170">public reply</text>
+    <circle cx="490" cy="99" r="26" fill="#d62976"/><text x="490" y="105" font-weight="800" fill="#fff">3</text>
+    <text x="490" y="150">Follow gate</text><text x="490" y="170">→ resource sent</text>
+    <circle cx="680" cy="99" r="26" fill="#b02c9b"/><text x="680" y="105" font-weight="800" fill="#fff">4</text>
+    <text x="680" y="150">Qualifying</text><text x="680" y="170">questions</text>
+    <circle cx="870" cy="99" r="26" fill="#7a3fc6"/><text x="870" y="105" font-weight="800" fill="#fff">5</text>
+    <text x="870" y="150">Phone + call</text><text x="870" y="170">language</text>
+    <circle cx="1080" cy="99" r="26" fill="#4f5bd5"/><text x="1080" y="105" font-weight="800" fill="#fff">6</text>
+    <text x="1080" y="150">Discord alert</text><text x="1080" y="170">→ owner calls</text>
+  </g>
+  <text x="600" y="50" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">From comment to qualified lead, with nobody online</text>
+</svg>

@@ -2,3 +2,8 @@ __pycache__/
 .voice_cache/
 library/
 node_modules/
+
+# private notes, never publish
+*Project_Brief*
+*project-brief*
+
