@@ -1,0 +1,20 @@
+name = "ig-autopilot"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[triggers]
+crons = ["* * * * *"]
+
+[ai]
+binding = "AI"
+
+[[kv_namespaces]]
+binding = "STATE"
+id = "__KV_ID__"
+
+[vars]
+GRAPH = "https://graph.facebook.com/v24.0"
+IG_USER_ID = "__IG_USER_ID__"
+VERIFY_TOKEN = "__VERIFY_TOKEN__"
+OPS_KEY_SHA256 = "__OPS_KEY_SHA256__"
+LIB_BASE = "__LIB_BASE__"
