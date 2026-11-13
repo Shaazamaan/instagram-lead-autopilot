@@ -141,6 +141,16 @@ async function postPoster(env) {   // single 4:5 image post
   await kvPut(env, "posted", posted); await log(env, `poster ${p.id} posted (${pub.id})`);
 }
 
+// Post metrics: try the Instagram-login (DM) token first (it carries the insights permission), then the posting token.
+async function insightsGet(env, media, metrics) {
+  const tok = await env.STATE.get("ig_login_token");
+  if (tok) {
+    const u = new URL(`https://graph.instagram.com/v24.0/${media}/insights`); u.search = new URLSearchParams({ metric: metrics, access_token: tok });
+    const j = await (await fetch(u)).json(); if (!j.error) return j;
+  }
+  return graph(env, `${media}/insights`, { metric: metrics }, "GET");
+}
+
 // ---------------- optimiser ----------------
 async function snapshot(env) {
   // one row per post per day: metrics + where/when it was posted. Kept 60 days. This is the insights database.
@@ -149,8 +159,10 @@ async function snapshot(env) {
     const age = (Date.now() - p.t) / 86400e3; if (age > 30 || p.kind === undefined) continue;
     let v = {};
     try {
-      const metrics = p.kind === "carousel" || p.kind === "poster" ? "reach,shares,saved,total_interactions,likes,comments" : "reach,views,shares,saved,total_interactions,likes,comments";
-      const r = await graph(env, `${p.media}/insights`, { metric: metrics }, "GET");
+      if (p.kind === "story" && age > 1) continue;   // Instagram keeps story insights for 24 h only
+      const metrics = p.kind === "story" ? "reach,views,replies,shares,total_interactions,follows,profile_visits"   // stories have no saved/likes/comments
+        : p.kind === "carousel" || p.kind === "poster" ? "reach,shares,saved,total_interactions,likes,comments" : "reach,views,shares,saved,total_interactions,likes,comments";
+      const r = await insightsGet(env, p.media, metrics);
       v = Object.fromEntries(r.data.map(d => [d.name, d.values?.[0]?.value ?? d.total_value?.value ?? 0]));
     } catch (e) { v = { error: String(e.message).slice(0, 80) }; }
     const ev = await kv(env, `ev:${id}`, { comments: 0, keyword: {}, leads: 0, dms: 0 });
@@ -318,7 +330,19 @@ async function sendDM(env, to, text, buttons = []) { return sendMsg(env, { id: t
 async function opsOk(env, key) {
   if (!key) return false;
   const h = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key)))].map(b => b.toString(16).padStart(2, "0")).join("");
-  return h === env.OPS_KEY_SHA256;
+  return h === env.OPS_KEY_SHA256 ? "owner" : (!!env.OPS_KEY_MONITOR_SHA256 && h === env.OPS_KEY_MONITOR_SHA256) ? "monitor" : false;
+}
+// The scheduled tasks' key sits in their task instructions, so it is limited: read status/insights, run read-only jobs,
+// hold or release a volume stage, and make GET-only Graph calls. It cannot change tokens, post, or see lead phone numbers.
+async function monitorAllowed(req, u) {
+  const p = u.pathname;
+  if (req.method === "GET") return ["/ops/status", "/ops/insights", "/ops/nudge", "/ops/leads"].includes(p);
+  if (req.method !== "POST") return false;
+  const b = await req.clone().json().catch(() => ({}));
+  if (p === "/ops/run") return ["slots", "snapshot", "optimise", "poll", "nudge"].includes(b.what) && !b.id;
+  if (p === "/ops/flag") return b.k === "stage_hold";
+  if (p === "/ops/graph") return (b.method || "GET") === "GET";
+  return false;
 }
 async function mediaToItem(env, mediaId) {
   const posted = await kv(env, "posted", {});
@@ -432,6 +456,7 @@ async function handleWebhook(env, body) {
     for (const ev of entry.messaging || []) {
       const mid = ev.message?.mid || ev.postback?.mid; if (mid) { if (await env.STATE.get(`dup:${mid}`)) continue; await env.STATE.put(`dup:${mid}`, "1", { expirationTtl: 86400 }); }
       if (ev.postback && !ev.message) ev.message = { text: ev.postback.title || ev.postback.payload || "" };   // button taps of other kinds
+      if (ev.message && !ev.message.is_echo && (ev.message.attachments || []).some(a => a?.type === "story_mention")) { await storyMention(env, ev.sender.id); continue; }   // not a lead message
       if (!ev.message || ev.message.is_echo || !ev.message.text) continue;
       const uid = ev.sender.id; const key = `t:${uid}`;
       if (/^\s*delete\s*$/i.test(ev.message.text)) {                  // data deletion request (see /privacy)
@@ -521,7 +546,7 @@ async function handleWebhook(env, body) {
       if ((ch.value.from?.id && ch.value.from.id === env.IG_USER_ID) || (ch.value.from?.username || "").toLowerCase() === OWN_USERNAME) continue;   // our own comments
       const item = await mediaToItem(env, ch.value.media?.id); await bumpPost(env, item, "comments");
       const uq = await uniqueKw(env, ch.value.text);                 // the post's own keyword ("LAUNCH") maps to its general one
-      const k0 = uq ? uq.base : matchKeyword(ch.value.text); if (!k0) continue; const m = [k0, k0];
+      const k0 = uq ? uq.base : matchKeyword(ch.value.text); if (!k0) { await commentReply(env, ch.value, item); continue; } const m = [k0, k0];
       if (uq) { await bumpPost(env, item, "kw:" + uq.kw); await log(env, `own keyword ${uq.kw} (${uq.base}, post ${uq.item})`); }
       await bumpPost(env, item, "kw:" + m[1].toUpperCase());
       if (ch.value.from?.id) {                                       // remember where this person came from, per keyword
@@ -560,6 +585,48 @@ const OWN_USERNAME = CFG.brand.handle.toLowerCase();
 const PUBLIC_REPLY = CFG.dm.public_reply;
 // Public note under the comment (varied so it never looks like a copy-paste bot) tells people where the DM is.
 const PUBLIC_DONE = CFG.dm.public_done;
+// Every other genuine comment gets one short public reply (AI, with fixed fallbacks). Spam gets none; emoji-only gets a fixed one.
+const EG = CFG.engagement;
+const CREPLY_SYS = `You reply publicly to an Instagram comment for @${CFG.brand.handle}, ${CFG.brand.what_we_do}. Write ONE friendly reply, 1-2 short sentences, under 180 characters, in the same language and script the commenter used. Warm, a little humour, relevant to their comment and the post. Sometimes (not always) invite them to comment ${CFG.keywords[0].word} for the free guide or to DM us. Never mention ${CFG.bot.never_say}, "cheap" or "affordable". Never give facts, rules, numbers or timelines; at most say our team can help. Never say you are human, AI, a bot or an assistant. Output only the reply text, no quotes.`;
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+function commentKind(text) {   // "spam" | "emoji" (emoji/punctuation/tags only) | "text"
+  const t = String(text || "");
+  if (/https?:\/\/|www\.|\b[a-z0-9-]+\.(com|in|net|org|ly|io|me|link|xyz)\b|promot|collab|follower|onlyfans|crypto|bitcoin|forex|giveaway|earn (money|\$)|check (my|our) (page|profile|bio)|dm (me|us) for/i.test(t)) return "spam";
+  return /^[\p{P}\p{S}\p{Extended_Pictographic}\p{M}\s\u200c\u200d\ufe0f]*$/u.test(t.replace(/@[\w.]+/g, "")) ? "emoji" : "text";
+}
+const NO_REPLY_RE = new RegExp(`${CFG.bot.price_words}|discount|offer|cheap|afford|budget|\\d{3,}|\\b(ai|bot|chatbot|chatgpt|assistant|automated|language model|human)\\b`, "i");
+function cleanReply(s) {   // sanitise AI output; "" when unusable so the caller falls back
+  let t = String(s || "").replace(/^\s*(reply|response|answer)\s*:\s*/i, "").replace(/["“”«»]/g, "").replace(/^['‘’`\s]+|['‘’`\s]+$/g, "").replace(/@[\w.]+/g, "").replace(/\s+/g, " ").trim();
+  if (!t || /[₹$€£]/.test(t) || NO_REPLY_RE.test(t) || CFG.content.forbidden_words.some(w => t.toLowerCase().includes(w.toLowerCase()))) return "";
+  if (t.length > 200) { t = t.slice(0, 200); const c = Math.max(t.lastIndexOf(". "), t.lastIndexOf("! "), t.lastIndexOf("? ")); t = c > 40 ? t.slice(0, c + 1) : t.replace(/\s+\S*$/, "") + "…"; }
+  return t.length >= 2 ? t : "";
+}
+async function commentReply(env, c, item) {   // c = webhook comment value; never called for our own comments
+  const kind = commentKind(c.text); if (kind === "spam") { await log(env, `comment skipped (spam): @${c.from?.username || "?"}`); return; }
+  const ck = `creply:${IST().toISOString().slice(0, 10)}`; const n = +(await env.STATE.get(ck) || 0);
+  if (n >= EG.comment_reply_cap_per_day) { if (n === EG.comment_reply_cap_per_day) { await env.STATE.put(ck, String(n + 1), { expirationTtl: 172800 }); await log(env, `comment reply cap (${n}/day) reached`); } return; }
+  const uk = `cru:${IST().toISOString().slice(0, 10)}:${c.from?.id || c.from?.username || "?"}`; const un = +(await env.STATE.get(uk) || 0);
+  if (un >= EG.per_person_per_day) return;   // so a "thanks" exchange can't go back and forth
+  let msg = kind === "emoji" ? pickOne(EG.emoji_replies) : "";
+  if (!msg) {
+    let hook = "", point = ""; try { const mf = await manifest(env); const it = [...(mf.items || []), ...(mf.carousels || []), ...(mf.posters || [])].find(i => i.id === item); hook = (it?.caption || "").split("\n")[0].replace(/["“”]/g, "").trim(); point = it?.point || ""; } catch (e0) {}
+    try { const r = await env.AI.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", { messages: [{ role: "system", content: CREPLY_SYS },
+      { role: "user", content: `Post hook: ${hook.slice(0, 120) || "?"}\nPost point: ${point.slice(0, 200) || "?"}\nComment: ${c.text.slice(0, 300)}` }], max_tokens: 90 });
+      msg = cleanReply(r.response); } catch (e) { await log(env, `AI unavailable for comment reply: ${String(e.message).slice(0, 80)}`); }
+    if (!msg) msg = pickOne(EG.fallback_replies);
+  }
+  const u = c.from?.username;   // Instagram only takes replies on top-level comments: answer a thread reply under its parent, tagging them
+  const target = c.parent_id || c.id; if (c.parent_id && u) msg = `@${u} ${msg}`;
+  try { await graph(env, `${target}/replies`, { message: msg }); await env.STATE.put(ck, String(n + 1), { expirationTtl: 172800 }); await env.STATE.put(uk, String(un + 1), { expirationTtl: 172800 }); await log(env, `comment reply: @${u || c.from?.id || "?"}`); }
+  catch (e) { await log(env, `comment reply failed: ${e.message}`); }
+}
+async function storyMention(env, uid) {   // one thank-you DM per person per 7 days; not a lead message
+  if (!uid || await env.STATE.get(`sm:${uid}`)) return;
+  try { await sendDM(env, uid, EG.story_thanks); await env.STATE.put(`sm:${uid}`, "1", { expirationTtl: 7 * 86400 });
+    const th = await kv(env, `t:${uid}`, []); th.push({ role: "assistant", content: EG.story_thanks }); await kvPut(env, `t:${uid}`, th);
+    await log(env, `story mention thanks: ${uid}`); }
+  catch (e) { await log(env, `story mention thanks failed: ${e.message}`); }
+}
 const FOLLOW_ASK = CFG.dm.follow_ask;
 const FOLLOW_RECHECK = CFG.dm.follow_recheck;
 const NEXT_BUTTONS = CFG.dm.next_buttons;
@@ -623,8 +690,10 @@ export default {
     }
     if (u.pathname === "/webhook" && req.method === "POST") { const b = await req.json(); ctx.waitUntil(handleWebhook(env, b).catch(e => log(env, `webhook ERROR ${e.message}`))); return new Response("ok"); }
     if (u.pathname.startsWith("/ops/")) {
-      if (!(await opsOk(env, req.headers.get("x-ops-key")))) return new Response("no", { status: 403 });
-      if (u.pathname === "/ops/leads") return json(await kv(env, "leads", {}));
+      const role = await opsOk(env, req.headers.get("x-ops-key"));
+      if (!role || (role === "monitor" && !(await monitorAllowed(req, u)))) return new Response("no", { status: 403 });
+      if (u.pathname === "/ops/leads") { const L = await kv(env, "leads", {}); if (role === "owner") return json(L);
+        return json(Object.fromEntries(Object.entries(L).map(([id, l]) => [id, { has_phone: !!l.phone, language: l.language || "", intent: l.intent, alerted: !!l.alerted, source_item: l.source_item || null }]))); }
       if (u.pathname === "/ops/insights") {
         const posted = await kv(env, "posted", {}); const out = {};
         for (const id of Object.keys(posted)) out[id] = { posted: posted[id], events: await kv(env, `ev:${id}`, null), snapshots: await kv(env, `snap:${id}`, []) };

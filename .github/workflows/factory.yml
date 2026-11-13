@@ -1,11 +1,11 @@
 name: reel-factory
-# Builds new reels twice a day (one run makes ~60 reels). Built stock is capped at 250 reels because GitHub Pages
+# Builds new reels twice a day (one run makes ~60 reels). Built stock is capped at 220 reels because GitHub Pages
 # sites are limited to about 1 GB (~2.5 MB per reel); the rest of the two-week backup waits as scripts in bank/.
 on:
   schedule: [{ cron: "30 19 * * *" }, { cron: "30 7 * * *" }]   # 01:00 and 13:00 IST
   workflow_dispatch:
     inputs:
-      stock_target: { description: "reels to keep ready", default: "250" }
+      stock_target: { description: "reels to keep ready", default: "220" }
       time_budget_min: { description: "minutes of building", default: "320" }
 permissions: { contents: write, pages: write, id-token: write }
 concurrency: { group: factory, cancel-in-progress: false }
@@ -16,9 +16,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Restore library (kept on its own branch, history squashed so the repo never grows)
+        # the folder must exist before checkout (git refuses a missing work tree); a failed restore stops the run
+        # instead of silently starting from an empty library and rebuilding everything
         run: |
-          git fetch origin library:library 2>/dev/null && git --work-tree=library checkout library -- . 2>/dev/null || true
-          git reset -q; ls library | head
+          mkdir -p library
+          if git fetch -q origin library:library; then
+            git --work-tree=library checkout library -- .
+            git reset -q
+            test -f library/manifest.json || { echo "::error::library branch restored but has no manifest.json"; exit 1; }
+            echo "restored library: $(ls library/media | wc -l) media files"
+          else
+            echo "::warning::no library branch yet, starting empty"
+          fi
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - name: Cache voice model and voice lines
@@ -37,12 +46,16 @@ jobs:
           pip install -q --force-reinstall --no-deps torchaudio --index-url https://download.pytorch.org/whl/cpu
           pip install -q -U protobuf sentencepiece
           python -c "import torch, torchaudio, parler_tts; print(torch.__version__, torchaudio.__version__)"
+      - name: Check bank (problems are listed here; the builder also skips any script that would render wrong)
+        id: bankcheck
+        continue-on-error: true
+        run: python factory/check_bank.py
       - name: Build reels
         id: build
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           POSTED_URL: ${{ vars.WORKER_URL }}/public/posted
-          STOCK_TARGET: ${{ inputs.stock_target || '250' }}
+          STOCK_TARGET: ${{ inputs.stock_target || '220' }}
           CAROUSEL_TARGET: "140"
           POSTER_TARGET: "70"
           STORY_TARGET: "70"
@@ -62,3 +75,6 @@ jobs:
         with: { path: library }
       - uses: actions/deploy-pages@v4
         if: ${{ !cancelled() && (steps.build.outcome == 'success' || steps.build.outcome == 'failure') }}
+      - name: Fail the run if the bank check found problems (after building and publishing, so nothing is lost)
+        if: ${{ !cancelled() && steps.bankcheck.outcome == 'failure' }}
+        run: echo "::error::check_bank.py found problems in bank/ (see the Check bank step)"; exit 1

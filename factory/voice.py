@@ -1,12 +1,12 @@
 """Voices (language from business.json) with AI4Bharat Indic Parler-TTS (Apache-2.0). Caches every line by content hash."""
-import os, hashlib
+import re, os, hashlib
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.environ.get("VOICE_CACHE", f"{ROOT}/.voice_cache")
 os.makedirs(CACHE, exist_ok=True)
 
 import json
 _C = json.load(open(f"{ROOT}/business.json", encoding="utf-8"))["language"]
-FEMALE = set(_C.get("female_names", []))
+FEMALE = set(_C.get("female_names", [])); MALE = set(_C.get("male_names", []))
 _F, _M = _C["tts_female"], _C["tts_male"]
 STYLE = "speaks in a very lively, animated and expressive way at a fast pace, with natural rises and falls in pitch, like excitedly chatting with a close friend. The audio is very clear and close-sounding with no background noise."
 VOICES = {
@@ -17,8 +17,16 @@ VOICES = {
     "NARRATOR": f"{_F} speaks clearly and confidently at a moderate pace, like explaining something useful to a friend. The recording is close-sounding with very little background noise.",
 }
 
-def voice_for(name, slot):
-    g = "F" if name in FEMALE else "M"
+def gender_known(name):
+    w = name.replace(".", " ").split()
+    return any(x in FEMALE or x in MALE for x in w + [name])
+
+def is_female(name, names=None):   # checked word by word ("Dr. Anu", "my sister Riya")
+    names = FEMALE if names is None else names
+    return name in names or any(w in names for w in name.replace(".", " ").split())
+
+def voice_for(name, slot, names=None):
+    g = "F" if is_female(name, names) else "M"
     return f"{g}{1 + slot % 2}"
 
 _model = None
@@ -34,7 +42,20 @@ def _load():
         _model = (model, AutoTokenizer.from_pretrained(m), AutoTokenizer.from_pretrained(model.config.text_encoder._name_or_path))
     return _model
 
+# Acronyms are spelled out letter by letter (NRI -> N R I), otherwise the model reads them as one word.
+LETTER = _C.get("letter_names") or {c: c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}
+AS_WORD = set(_C.get("read_as_words", []))
+ACR = re.compile(r"(?<![A-Za-z])([A-Z]{2,6})(?![a-z])")
+def spoken(text):
+    text = ACR.sub(lambda m: m.group(1) if m.group(1) in AS_WORD else " ".join(LETTER.get(c, c) for c in m.group(1)), text)
+    text = re.sub(r"(\d)([A-Z])(?![A-Za-z])", lambda m: m.group(1) + " " + LETTER.get(m.group(2), m.group(2)), text)
+    lo, hi = _C["unicode_range"]
+    text = re.sub(f"-(?=[{lo}-{hi}])", "", text)
+    return text.replace("-", " ")
+HAS_ACR = lambda t: bool(ACR.search(t)) and any(w not in AS_WORD for w in ACR.findall(t))
+
 def say(text, voice):
+    text = spoken(text)
     key = hashlib.sha1(f"{voice}|{VOICES[voice]}|{text}".encode()).hexdigest()[:16]
     out = f"{CACHE}/{key}.wav"
     if os.path.exists(out): return out

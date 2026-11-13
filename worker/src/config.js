@@ -4,9 +4,9 @@ export default {
  "brand": {
   "handle": "your.instagram.handle",
   "display_name": "Your Business Name",
-  "what_we_do": "a company-registration service in Kerala, India",
-  "topic_phrase": "company registration",
-  "hashtags": "#yourniche #yourcity #smallbusiness #entrepreneur"
+  "what_we_do": "<one line: what the business does and where>",
+  "topic_phrase": "<topic, e.g. home loans>",
+  "hashtags": "#niche #city #smallbusiness"
  },
  "timezone_offset_hours": 5.5,
  "quiet_hours": [
@@ -14,7 +14,6 @@ export default {
   8
  ],
  "language": {
-  "_note": "On-screen text + voice language. font_script must match a font pair in assets/fonts: <font_prefix>-<font_script>-600/800.ttf and <font_prefix>-latin-600/800.ttf. tts speakers: see SKILL / setup/LANGUAGES.md.",
   "name": "Malayalam",
   "font_prefix": "anek-malayalam",
   "font_script": "malayalam",
@@ -26,13 +25,72 @@ export default {
   "tts_male": "Harish",
   "female_names": [
    "Anu",
-   "Meera"
+   "Meera",
+   "Riya",
+   "Mom",
+   "Sister"
   ],
-  "default_names": [
-   "Anu",
-   "Vishnu"
+  "default_names": {
+   "F": [
+    "Anu",
+    "Meera"
+   ],
+   "M": [
+    "Vishnu",
+    "Rahul"
+   ]
+  },
+  "comment_word": "comment",
+  "letter_names": {
+   "A": "എ",
+   "B": "ബി",
+   "C": "സി",
+   "D": "ഡി",
+   "E": "ഇ",
+   "F": "എഫ്",
+   "G": "ജി",
+   "H": "എച്ച്",
+   "I": "ഐ",
+   "J": "ജെ",
+   "K": "കെ",
+   "L": "എൽ",
+   "M": "എം",
+   "N": "എൻ",
+   "O": "ഒ",
+   "P": "പി",
+   "Q": "ക്യു",
+   "R": "ആർ",
+   "S": "എസ്",
+   "T": "ടി",
+   "U": "യു",
+   "V": "വി",
+   "W": "ഡബ്ല്യു",
+   "X": "എക്സ്",
+   "Y": "വൈ",
+   "Z": "സെഡ്"
+  },
+  "read_as_words": [
+   "START",
+   "AFTER",
+   "NAME",
+   "CHECKLIST",
+   "DONE",
+   "STOP"
   ],
-  "comment_word": "comment"
+  "_letters_note": "How the voice says each capital letter of an acronym (NRI -> N R I). Write the letter names in the content language; leave empty to use plain Latin letters.",
+  "male_names": [
+   "Vishnu",
+   "Rahul",
+   "Arjun",
+   "Dad",
+   "Brother"
+  ],
+  "address_words": {
+   "_note": "Words that only make sense said TO a woman / TO a man (e.g. Malayalam ചേച്ചി / ചേട്ടാ). check_bank.py flags a mismatch.",
+   "to_female": [],
+   "to_male": []
+  },
+  "_note": "font_script must match assets/fonts/<font_prefix>-<font_script>-600/800.ttf (setup/fonts.py). Every person name used anywhere must be in female_names or male_names (voice gender is never guessed)."
  },
  "segments": [
   "freelancer",
@@ -215,6 +273,56 @@ export default {
    "affordable",
    "discount"
   ],
-  "rules": "Never state a service price. Only statutory numbers (penalties, deadlines) may appear."
+  "rules": "Never state a service price. Only statutory numbers (penalties, deadlines) may appear.",
+  "amount_regex": "(\\S+) (?:rupees|Rs\\.?)",
+  "allowed_amounts": [],
+  "_amounts_note": "Every money amount in a script must be listed in allowed_amounts (statutory penalties etc.); anything else is treated as a forbidden price."
+ },
+ "ui": {
+  "_note": "All on-screen words the factory draws. Translate into the content language during setup.",
+  "or": "or",
+  "comment_cta": "comment",
+  "reply_cta": "reply",
+  "swipe": "Swipe  >>",
+  "default_tag": "Good to know",
+  "badge_story": "A short story",
+  "badge_chat": "Chat story",
+  "badge_list": "Checklist",
+  "story_new_reel": "New reel",
+  "story_go_profile": "Watch it on our profile 👆",
+  "story_tip": "Today's tip",
+  "story_quiz": "Quiz",
+  "story_answer": "Answer",
+  "story_contact": "Ask us",
+  "follow_for_more": "Follow for more tips like this",
+  "quiz_foot": "Answer in the next story. Reply with yours",
+  "dm_foot": "We'll reply in your messages",
+  "myth_label": "What people say",
+  "truth_label": "The truth",
+  "numbers": [
+   "One",
+   "Two",
+   "Three",
+   "Four",
+   "Five"
+  ]
+ },
+ "kw_pool_extra": [],
+ "engagement": {
+  "comment_reply_cap_per_day": 150,
+  "per_person_per_day": 2,
+  "emoji_replies": [
+   "🙌",
+   "❤️ Thank you!",
+   "😊🙏",
+   "Thank you! 🙌"
+  ],
+  "fallback_replies": [
+   "Thank you! 🙌",
+   "Glad this helped 😊 Comment START if you want our free guide.",
+   "Thanks a lot! 🙏 DM us anytime if you need help.",
+   "Appreciate it 😊 More tips coming every day!"
+  ],
+  "story_thanks": "Thanks a lot for sharing us in your story! 🙌 If you or a friend need help, just reply here."
  }
 };

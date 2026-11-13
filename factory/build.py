@@ -117,33 +117,35 @@ def pick(bank, man, n):
     return out
 
 def sync_posted(man):
-    """Mark items the Cloudflare poster already published; delete their media after 3 days to keep the repo small."""
+    """Mark items the Cloudflare poster already published; delete their media after 1 day (Instagram copies it at publish; keeps Pages under 1 GB) to keep the repo small."""
     url = os.environ.get("POSTED_URL")
     if not url: return
     import urllib.request
-    try: posted = set(json.load(urllib.request.urlopen(url, timeout=30)))
-    except Exception as e: print("could not read posted list:", e); return
+    # Cloudflare refuses Python's default user agent from GitHub runners (HTTP 403), so send a normal one
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (reel-factory)", "Accept": "application/json"})
+    try: posted = set(json.load(urllib.request.urlopen(req, timeout=30)))
+    except Exception as e: print(f"::error::could not read posted list: {e}"); return
     now = int(time.time())
     for i in man["items"]:
         if i["id"] in posted and not i.get("posted"): i["posted"] = now
-        if i.get("posted") and now - i["posted"] > 3 * 86400:
+        if i.get("posted") and now - i["posted"] > 86400:
             for f in (i["video"], i["cover"], f"media/{i['id']}_story.jpg"):
                 p = f"{LIB}/{f}"
                 if os.path.exists(p): os.remove(p)
     for x in man.get("stories", []):
         if not x.get("src"): continue                     # reel teasers go with their reel
         if x["id"] in posted and not x.get("posted"): x["posted"] = now
-        if x.get("posted") and now - x["posted"] > 3 * 86400 and os.path.exists(f"{LIB}/{x['image']}"): os.remove(f"{LIB}/{x['image']}")
+        if x.get("posted") and now - x["posted"] > 86400 and os.path.exists(f"{LIB}/{x['image']}"): os.remove(f"{LIB}/{x['image']}")
     # standalone stories stay listed after posting so the builder never makes them again; teasers leave with their media
     man["stories"] = [x for x in man.get("stories", []) if x.get("src") or os.path.exists(f"{LIB}/{x['image']}")]
     for c in man.get("carousels", []):
         if c["id"] in posted and not c.get("posted"): c["posted"] = now
-        if c.get("posted") and now - c["posted"] > 3 * 86400:
+        if c.get("posted") and now - c["posted"] > 86400:
             for f in c["images"]:
                 if os.path.exists(f"{LIB}/{f}"): os.remove(f"{LIB}/{f}")
     for p in man.get("posters", []):
         if p["id"] in posted and not p.get("posted"): p["posted"] = now
-        if p.get("posted") and now - p["posted"] > 3 * 86400 and os.path.exists(f"{LIB}/{p['image']}"): os.remove(f"{LIB}/{p['image']}")
+        if p.get("posted") and now - p["posted"] > 86400 and os.path.exists(f"{LIB}/{p['image']}"): os.remove(f"{LIB}/{p['image']}")
     # posted carousels stay listed (without media) so the builder never makes them again
 
 def place(s, man):
@@ -154,13 +156,15 @@ def place(s, man):
     if s.get("scene_lock") or home not in duo3d.GROUPS:
         return s
     if not s.get("names"): s["names"] = duo3d.SCENES[home]["names"]       # dialogue mentions these names
-    opts = [x for x in duo3d.GROUPS[home] if x in duo3d.SCENES and duo3d.available(x)] or [home]
+    # only places whose drawn people match the script's names
+    opts = [x for x in duo3d.GROUPS[home] if x in duo3d.SCENES and duo3d.available(x) and duo3d.fits(x, s["names"])] or [home]
     hist = [i.get("scene") for i in sorted(man["items"], key=lambda i: i.get("built", 0))]
     def last(x): return max([k for k, v in enumerate(hist) if v == x], default=-1)
     opts.sort(key=lambda x: (last(x), abs(hash(s["id"] + x)) % 97))
     s["scene"] = opts[0]; return s
 
 def main():
+    run_fail = []
     target = int(os.environ.get("STOCK_TARGET", "40")); budget = float(os.environ.get("TIME_BUDGET_MIN", "300")) * 60
     only = [a for a in sys.argv[1:] if not a.startswith("-")]
     bank, man = load_bank(), manifest()
@@ -174,7 +178,7 @@ def main():
     # carousels and standalone stories are quick still images: top them up before the slow reel renders
     for name, fn, env, dflt in (("carousels", build_carousels, "CAROUSEL_TARGET", "70"), ("stories", build_stories, "STORY_TARGET", "70"), ("posters", build_posters, "POSTER_TARGET", "70")):
         try: fn(man, int(os.environ.get(env, dflt)))
-        except Exception as e: print(f"{name} build failed:", repr(e), flush=True)
+        except Exception as e: print(f"{name} build failed:", repr(e), flush=True); run_fail.append(f"{name}: {e!r}")
     stock = sum(1 for i in man["items"] if not i.get("posted"))
     if only: todo = [s for s in bank if s["id"] in only]
     else: todo = pick(bank, man, max(0, target - stock))
@@ -190,7 +194,7 @@ def main():
         try: info = build(s, out, seed=abs(hash(s["id"])) % 10000)
         except Exception as e:   # one bad script must not lose the whole night's work
             fails = man.setdefault("failed", {}); fails[s["id"]] = fails.get(s["id"], 0) + 1
-            print("FAILED", s["id"], repr(e), flush=True); json.dump(man, open(MAN, "w"), ensure_ascii=False, indent=1); continue
+            print("FAILED", s["id"], repr(e), flush=True); run_fail.append(f"{s['id']}: {e!r}"); json.dump(man, open(MAN, "w"), ensure_ascii=False, indent=1); continue
         cover.make(s, info["cover_frame"], f"{LIB}/media/{s['id']}.jpg")
         cover.story(s, info["cover_frame"], f"{LIB}/media/{s['id']}_story.jpg")
         man.setdefault("stories", [])
@@ -215,6 +219,11 @@ def main():
     for f in os.listdir(f"{LIB}/media"):
         if f not in keep and not f.startswith("."): os.remove(f"{LIB}/media/{f}")
     print(f"unbuilt scripts left in bank: {left}, carousels left: {cl}")
+    # failures are saved and published as usual, but the run ends red so the monitor reads the log and fixes it
+    man["last_failures"] = run_fail; json.dump(man, open(MAN, "w"), ensure_ascii=False, indent=1)
+    if run_fail:
+        for f in run_fail: print(f"::error::{f}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

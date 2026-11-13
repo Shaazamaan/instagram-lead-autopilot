@@ -17,4 +17,5 @@ GRAPH = "https://graph.facebook.com/v24.0"
 IG_USER_ID = "__IG_USER_ID__"
 VERIFY_TOKEN = "__VERIFY_TOKEN__"
 OPS_KEY_SHA256 = "__OPS_KEY_SHA256__"
+OPS_KEY_MONITOR_SHA256 = "__OPS_KEY_MONITOR_SHA256__"   # scheduled tasks' key: read-only plus stage holds
 LIB_BASE = "__LIB_BASE__"

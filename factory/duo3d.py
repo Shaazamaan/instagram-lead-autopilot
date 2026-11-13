@@ -23,8 +23,12 @@ _S = dict(
     gulfroom="indoor", mall="busy")
 import json as _j
 _CF = _j.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "business.json"), encoding="utf-8"))
-_NM = _CF.get("scene_names", {}); _DN = tuple(_CF["language"]["default_names"])
-SCENES = {k: dict(dir="" if k == "teashop" else k, names=tuple(_NM.get(k, _DN)), amb=m) for k, m in _S.items()}
+# Genders of the two people drawn in each location (left A, right V). Names given to a location must match them.
+GENDER = {"teashop": "FM", "office": "FM", "home": "FM", "gulf": "MM", "busstop": "MM", "hospital": "FM", "bank": "FM", "canteen": "FM", "shop": "MM", "beach": "FM", "cafe": "MM", "airport": "MM", "farm": "MM", "thattukada": "MM", "autostand": "MM", "ferry": "FM", "metro": "FM", "rubber": "MM", "fishmarket": "FM", "textile": "FM", "weddinghall": "FM", "classroom": "FM", "library": "FM", "gym": "FM", "salon": "FM", "mobileshop": "FM", "bakery": "FM", "hotellobby": "FM", "rooftop": "FM", "balcony": "FM", "kitchen": "FM", "veranda": "FM", "railway": "FM", "hostel": "FM", "garage": "FM", "pharmacy": "FM", "tailor": "FM", "homestay": "FM", "munnar": "FM", "handloom": "FM", "park": "FM", "juiceshop": "FM", "foodcourt": "FM", "akshaya": "FM", "photocopy": "FM", "petrolpump": "MM", "courier": "FM", "gulfoffice": "FM", "gulfroom": "MM", "mall": "FM"}
+_NM = _CF.get("scene_names", {}); _DN = _CF["language"]["default_names"]
+def _default(k):
+    g = GENDER.get(k, "FM"); return tuple(_DN[x][i % len(_DN[x])] for i, x in enumerate(g)) if g != "MM" else (_DN["M"][0], _DN["M"][1 % len(_DN["M"])])
+SCENES = {k: dict(dir="" if k == "teashop" else k, names=tuple(_NM.get(k, _default(k))), amb=m) for k, m in _S.items()}
 # a script written for one of the 4 original settings can play in any of these compatible places
 GROUPS = {
     "teashop": ["teashop", "thattukada", "busstop", "autostand", "juiceshop", "bakery", "park", "farm", "rubber", "ferry", "beach", "petrolpump", "fishmarket", "munnar", "homestay", "railway", "shop"],
@@ -32,6 +36,11 @@ GROUPS = {
     "home": ["home", "kitchen", "veranda", "balcony", "rooftop", "hospital", "weddinghall"],
     "gulf": ["gulf", "gulfroom", "gulfoffice", "mall", "airport"],
 }
+def fits(scene, names):
+    """True when the two names have the same genders as the two people drawn in this location."""
+    from voice import is_female
+    return tuple("F" if is_female(n) else "M" for n in names) == tuple(GENDER.get(scene, "FM"))
+
 def available(scene):
     import os
     d = f"{ROOT}/assets/stills" + ("/" + SCENES[scene]["dir"] if SCENES[scene]["dir"] else "")
