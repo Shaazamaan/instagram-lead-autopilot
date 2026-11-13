@@ -324,5 +324,106 @@ export default {
    "Appreciate it 😊 More tips coming every day!"
   ],
   "story_thanks": "Thanks a lot for sharing us in your story! 🙌 If you or a friend need help, just reply here."
+ },
+ "captions": {
+  "_note": "Captions for every feed post: hook line, then one paragraph per language (each ending with the keyword call to action), then at most 5 hashtags (Instagram's limit since Dec 2025). Write each language the way the audience searches (e.g. Malayalam script, English, Manglish). Scripts may carry their own cap_<lang> fields; otherwise the topic text for their keyword is used. No prices.",
+  "languages": [
+   "ml",
+   "en",
+   "mg"
+  ],
+  "topic": {
+   "START": {
+    "ml": "<topic text in the content language, with the words people search>",
+    "en": "<topic text in English, with search phrases>",
+    "mg": "<topic text in the romanised form people type>"
+   },
+   "NAME": {
+    "ml": "<topic text in the content language, with the words people search>",
+    "en": "<topic text in English, with search phrases>",
+    "mg": "<topic text in the romanised form people type>"
+   },
+   "AFTER": {
+    "ml": "<topic text in the content language, with the words people search>",
+    "en": "<topic text in English, with search phrases>",
+    "mg": "<topic text in the romanised form people type>"
+   },
+   "CHECKLIST": {
+    "ml": "<topic text in the content language, with the words people search>",
+    "en": "<topic text in English, with search phrases>",
+    "mg": "<topic text in the romanised form people type>"
+   }
+  },
+  "segment": {
+   "freelancer": {
+    "ml": "<who it is for, in the content language>",
+    "en": "For freelancer.",
+    "mg": "<who it is for, romanised>"
+   },
+   "cofounders": {
+    "ml": "<who it is for, in the content language>",
+    "en": "For cofounders.",
+    "mg": "<who it is for, romanised>"
+   },
+   "proprietor": {
+    "ml": "<who it is for, in the content language>",
+    "en": "For proprietor.",
+    "mg": "<who it is for, romanised>"
+   },
+   "salaried": {
+    "ml": "<who it is for, in the content language>",
+    "en": "For salaried.",
+    "mg": "<who it is for, romanised>"
+   },
+   "solo": {
+    "ml": "<who it is for, in the content language>",
+    "en": "For solo.",
+    "mg": "<who it is for, romanised>"
+   },
+   "nri": {
+    "ml": "<who it is for, in the content language>",
+    "en": "For nri.",
+    "mg": "<who it is for, romanised>"
+   }
+  },
+  "cta": {
+   "ml": "<comment {base} or {kw}, in the content language> 👇",
+   "en": "Comment {base} or {kw} and we'll send it to your DM 👇",
+   "mg": "<same, romanised> 👇"
+  },
+  "hashtags": {
+   "core": "#yourniche",
+   "local": [
+    "#yourcity",
+    "#yourstate"
+   ],
+   "topic": {
+    "START": [
+     "#topictag"
+    ],
+    "NAME": [
+     "#topictag"
+    ],
+    "AFTER": [
+     "#topictag"
+    ],
+    "CHECKLIST": [
+     "#topictag"
+    ]
+   },
+   "segment": {
+    "freelancer": "#freelancer",
+    "cofounders": "#cofounders",
+    "proprietor": "#proprietor",
+    "salaried": "#salaried",
+    "solo": "#solo",
+    "nri": "#nri"
+   },
+   "extra": [
+    "#smallbusiness",
+    "#entrepreneur",
+    "#startup"
+   ]
+  }
  }
 };
