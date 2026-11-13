@@ -16,24 +16,24 @@ def chat(id, segment, bucket, hook, names, lines, end, cta): S.append(dict(id=id
 def lst(id, segment, bucket, hook, items, end, cta): S.append(dict(id=id, kind="list", segment=segment, bucket=bucket, hook=hook, items=items, end=end, cta=cta))
 
 # duo3d lines: (speaker "A" or "V", camera "wide" / "A" / "V", text). Speaker A/V use the scene's default names.
-duo("d001", "freelancer", "A", "cafe", "Big client said yes.\nThen one question…", [
- ("A", "wide", "I finally got the big client!"),
- ("V", "V", "Great! Coffee is on you today."),
- ("A", "A", "One problem. They asked for my business registration."),
- ("V", "V", "So send it."),
- ("A", "A", "I would, if I had one."),
- ("V", "wide", "Then that's today's job!")],
- "Get ready before the\nbig client asks", CTA_START)
+duo("d001", "freelancer", "A", "cafe", "വലിയ ക്ലയന്റ് ഓക്കെ പറഞ്ഞു.\nപിന്നെ ഒരു ചോദ്യം…", [
+ ("A", "wide", "ഒടുവിൽ വലിയ ക്ലയന്റിനെ കിട്ടി!"),
+ ("V", "V", "കൊള്ളാം! ഇന്ന് ചായ നിന്റെ വക."),
+ ("A", "A", "ഒരു പ്രശ്നം. അവർ കമ്പനി രജിസ്ട്രേഷൻ ചോദിച്ചു."),
+ ("V", "V", "അപ്പോ അയച്ചു കൊടുക്ക്."),
+ ("A", "A", "ഉണ്ടായിരുന്നെങ്കിൽ അയച്ചേനെ."),
+ ("V", "wide", "എന്നാൽ ഇന്നത്തെ പണി അതാ!")],
+ "ക്ലയന്റ് ചോദിക്കും മുമ്പ്\nറെഡിയാകൂ", CTA_START)
 
-chat("c001", "solo", "A", "One message that\nchanged the plan", ("Riya", "Mom"), [
- (0, "Mom, I'm starting my own thing!"),
- (1, "Wonderful. Is it registered?"),
- (0, "Not yet…"),
- (1, "Do it properly from day one.")],
- "Start it the right way", CTA_START)
+chat("c001", "solo", "A", "പ്ലാൻ മാറ്റിയ\nഒരു മെസ്സേജ്", ("Riya", "Mom"), [
+ (0, "അമ്മേ, ഞാൻ സ്വന്തം ബിസിനസ് തുടങ്ങുന്നു!"),
+ (1, "നല്ലത്. രജിസ്റ്റർ ചെയ്തോ?"),
+ (0, "ഇല്ല…"),
+ (1, "ആദ്യ ദിവസം മുതൽ ശരിയായി ചെയ്യ്.")],
+ "ശരിയായ രീതിയിൽ തുടങ്ങൂ", CTA_START)
 
-lst("l001", "proprietor", "B", "3 things to have\nready first", [
- ("ID documents", "For everyone involved."),
- ("Address proof", "A recent utility bill."),
- ("Name options", "Keep 2-3 backups.")],
- "Save this list", CTA_DOCS)
+lst("l001", "proprietor", "B", "ആദ്യം റെഡിയാക്കേണ്ട\n3 കാര്യങ്ങൾ", [
+ ("ഐഡി രേഖകൾ", "എല്ലാവരുടെയും."),
+ ("അഡ്രസ്സ് പ്രൂഫ്", "പുതിയ കറന്റ് ബിൽ."),
+ ("പേരുകൾ", "2-3 ബാക്കപ്പ് പേരുകൾ.")],
+ "ഇത് സേവ് ചെയ്യൂ", CTA_DOCS)

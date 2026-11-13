@@ -60,6 +60,12 @@ for t in banks["stories"]:
 for p in banks["posters"]:
     if p["layout"] not in ("fact", "myth", "deadline", "check"): err(f"{p['id']}: unknown layout {p['layout']}")
 
+# 3c. every Latin-letter word the voice reads must be in business.json language.say (acronyms are spelled out)
+import speak
+for x in banks["reels"]:
+    for t in build.spoken_texts(x):
+        for w in speak.unknown_latin(t): err(f"{x['id']}: the voice cannot say '{w}': add it to language.say in business.json or write it in the content language")
+
 # 4. no currency sign and no forbidden (price) words in any bank text
 PRICE = re.compile(r"(^|[\s\"'(.,!?])(" + "|".join(map(re.escape, CFG["content"]["forbidden_words"])) + r")($|[\s\"').,!?])", re.I)
 for f in sorted(glob.glob(f"{ROOT}/bank/*.py")):

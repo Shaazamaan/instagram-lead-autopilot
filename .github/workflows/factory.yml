@@ -44,7 +44,7 @@ jobs:
           pip install -q torch --index-url https://download.pytorch.org/whl/cpu
           pip install -q "git+https://github.com/huggingface/parler-tts.git" soundfile pillow numpy
           pip install -q --force-reinstall --no-deps torchaudio --index-url https://download.pytorch.org/whl/cpu
-          pip install -q -U protobuf sentencepiece
+          pip install -q -U protobuf sentencepiece num2words
           python -c "import torch, torchaudio, parler_tts; print(torch.__version__, torchaudio.__version__)"
       - name: Check bank (problems are listed here; the builder also skips any script that would render wrong)
         id: bankcheck

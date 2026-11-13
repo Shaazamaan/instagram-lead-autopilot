@@ -89,7 +89,23 @@
       "to_female": [],
       "to_male": []
     },
-    "_note": "font_script must match assets/fonts/<font_prefix>-<font_script>-600/800.ttf (setup/fonts.py). Every person name used anywhere must be in female_names or male_names (voice gender is never guessed)."
+    "_note": "font_script must match assets/fonts/<font_prefix>-<font_script>-600/800.ttf (setup/fonts.py). Every person name used anywhere must be in female_names or male_names (voice gender is never guessed).",
+    "numbers": "ml",
+    "percent_word": "ശതമാനം",
+    "per_word": "ഒരു",
+    "and_word": "പിന്നെ",
+    "say": {
+      "pvt": "പ്രൈവറ്റ്",
+      "ltd": "ലിമിറ്റഡ്",
+      "ok": "ഓക്കെ",
+      "dm": "ഡി എം",
+      "app": "ആപ്പ്",
+      "online": "ഓൺലൈൻ",
+      "3d": "ത്രീ ഡി"
+    },
+    "asr_model": "thennal/whisper-medium-ml",
+    "asr_language": "malayalam",
+    "_speech_note": "numbers: 'ml' (built-in Malayalam), 'num2words:<code>' or 'none'. say: English words written in Latin letters -> how the voice should say them (check_bank refuses unknown ones). asr_model/asr_language: speech recogniser for the daily pronunciation audit."
   },
   "segments": [
     "freelancer",

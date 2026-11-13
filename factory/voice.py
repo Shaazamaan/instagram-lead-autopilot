@@ -42,17 +42,7 @@ def _load():
         _model = (model, AutoTokenizer.from_pretrained(m), AutoTokenizer.from_pretrained(model.config.text_encoder._name_or_path))
     return _model
 
-# Acronyms are spelled out letter by letter (NRI -> N R I), otherwise the model reads them as one word.
-LETTER = _C.get("letter_names") or {c: c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}
-AS_WORD = set(_C.get("read_as_words", []))
-ACR = re.compile(r"(?<![A-Za-z])([A-Z]{2,6})(?![a-z])")
-def spoken(text):
-    text = ACR.sub(lambda m: m.group(1) if m.group(1) in AS_WORD else " ".join(LETTER.get(c, c) for c in m.group(1)), text)
-    text = re.sub(r"(\d)([A-Z])(?![A-Za-z])", lambda m: m.group(1) + " " + LETTER.get(m.group(2), m.group(2)), text)
-    lo, hi = _C["unicode_range"]
-    text = re.sub(f"-(?=[{lo}-{hi}])", "", text)
-    return text.replace("-", " ")
-HAS_ACR = lambda t: bool(ACR.search(t)) and any(w not in AS_WORD for w in ACR.findall(t))
+from speak import spoken   # numbers, Latin words, acronyms, symbols -> what the voice should say (factory/speak.py)
 
 def say(text, voice):
     text = spoken(text)

@@ -149,6 +149,14 @@ def sync_posted(man):
         if p.get("posted") and now - p["posted"] > 86400 and os.path.exists(f"{LIB}/{p['image']}"): os.remove(f"{LIB}/{p['image']}")
     # posted carousels stay listed (without media) so the builder never makes them again
 
+def spoken_texts(sc):
+    """The strings the voice actually reads in a script (dialogue lines, list items, end line)."""
+    out = []
+    for l in sc.get("lines") or []: out.append(l[-1] if isinstance(l, (list, tuple)) else str(l))
+    for it in sc.get("items") or []: out.extend(x for x in (it if isinstance(it, (list, tuple)) else [it]) if isinstance(x, str))
+    if sc.get("end"): out.append(str(sc["end"]))
+    return out
+
 def recaption(man):
     """Give every unposted reel, carousel and poster the current caption (cheap: no re-render)."""
     banks = {"items": {x["id"]: x for x in load_bank()}, "carousels": {x["id"]: x for x in load_carousels()}, "posters": {x["id"]: x for x in load_posters()}}
