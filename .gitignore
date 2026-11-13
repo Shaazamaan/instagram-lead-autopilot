@@ -1,6 +1,6 @@
 __pycache__/
 .voice_cache/
-library/
+/library/
 node_modules/
 
 # private notes, never publish
