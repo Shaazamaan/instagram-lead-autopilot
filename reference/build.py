@@ -12,7 +12,7 @@ import topics
 LIB = f"{ROOT}/library"; os.makedirs(f"{LIB}/media", exist_ok=True)
 MAN = f"{LIB}/manifest.json"
 POSTER_V = 2   # bump when the poster look changes: unposted posters get re-rendered
-VERSION = 8   # bump when voices/look change: unposted reels from older versions get rebuilt
+VERSION = 9   # bump when voices/look change: unposted reels from older versions get rebuilt
 
 def _load(prefix, attr):
     """Every topic's bank files (bank/<prefix>*.py, bank/gst/<prefix>*.py, bank/inv/<prefix>*.py); each entry is tagged with its topic."""
@@ -130,6 +130,19 @@ def pick(bank, man, n):
         s = max(cand, key=score); out.append(s); last_kind, last_seg = s["kind"], s["segment"]
     return out
 
+def build_shoutouts(man):
+    """Images for queued follower shout-outs (only people who said yes; the worker posts them)."""
+    url = (os.environ.get("POSTED_URL") or "").replace("/public/posted", "/public/shoutqueue")
+    if not url: return
+    import urllib.request, shoutout
+    try: q = json.load(urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (rl-kerala-reel-factory)"}), timeout=30))
+    except Exception as e: print("shoutqueue:", e, flush=True); return
+    have = {x["id"] for x in man.setdefault("shoutouts", [])}
+    for x in q:
+        if x["id"] in have or not x.get("names"): continue
+        shoutout.make(x, f"{LIB}/media/{x['id']}.jpg"); man["shoutouts"].append(dict(id=x["id"], kind=x["kind"], image=f"media/{x['id']}.jpg")); print("shout-out", x["id"], flush=True)
+    json.dump(man, open(MAN, "w"), ensure_ascii=False, indent=1)
+
 def sync_posted(man):
     """Mark items the Cloudflare poster already published; delete their media after 1 day (Instagram copies it at publish; keeps the Pages site under 1 GB at 35 reels a day) to keep the repo small."""
     url = os.environ.get("POSTED_URL")
@@ -205,6 +218,8 @@ def main():
     only = [a for a in sys.argv[1:] if not a.startswith("-")]
     bank, man = load_bank(), manifest()
     sync_posted(man)
+    try: build_shoutouts(man)
+    except Exception as e: print("shout-outs failed:", repr(e), flush=True)
     try: recaption(man)
     except Exception as e: print("recaption failed:", repr(e), flush=True)
     # v4 changed only how acronyms are spoken: rebuild just the unposted reels whose lines contain one, re-tag the rest
@@ -226,6 +241,7 @@ def main():
         if i.get("v", 1) < 6 and any(re.search(r"\d|[A-Za-z]*[a-z][A-Za-z]*|\b3D\b", t) for t in spoken_texts(sc)): return True   # v6: numbers and English words spoken properly
         if i.get("v", 1) < 7 and any(re.search(r"(?<![\u0d00-\u0d7f])ഒ(?![\u0d00-\u0d7f\u200c\u200d])", speak_ml.before_respell(t)) for t in spoken_texts(sc)): return True   # v7: letter O said as ഓ (OPC, NOC, ROC)
         if i.get("v", 1) < 8 and any(re.search(r"[A-Z]{2,5}-\d|ഇൻവോയ്സ്|സ്റ്റോൾ", t) for t in spoken_texts(sc)): return True   # v8: form codes in English numbers (INC-20A), invoice, stall
+        if i.get("v", 1) < 9 and sc.get("kind") == "list": return True   # v9: list cards shrink to fit above Instagram's caption area (3rd card was hidden)
         return voice_changed(i, sc)
     old = set()
     for i in man["items"]:   # any unposted reel whose names do not match the people drawn in its location
@@ -270,7 +286,7 @@ def main():
         man.setdefault("stories", [])
         man["stories"] = [x for x in man["stories"] if x["id"] != "s_" + s["id"]] + [dict(id="s_" + s["id"], image=f"media/{s['id']}_story.jpg", reel=s["id"], topic=topic_of(s))]
         cap = captions.caption(s, s["hook"].replace("\n", " "))
-        man["items"] = [i for i in man["items"] if i["id"] != s["id"]] + [dict(id=s["id"], topic=topic_of(s), kind=s["kind"], segment=s["segment"], bucket=s["bucket"], scene=s.get("scene"), sound=None, kw=s["kw"], base=s["base"], point=s["end"].replace("\n", " "),
+        man["items"] = [i for i in man["items"] if i["id"] != s["id"]] + [dict(id=s["id"], topic=topic_of(s), theme=s.get("theme"), kind=s["kind"], segment=s["segment"], bucket=s["bucket"], scene=s.get("scene"), sound=None, kw=s["kw"], base=s["base"], point=s["end"].replace("\n", " "),
             video=f"media/{s['id']}.mp4", cover=f"media/{s['id']}.jpg", caption=cap, duration=info["duration"], built=int(time.time()), posted=None, v=VERSION)]
         json.dump(man, open(MAN, "w"), ensure_ascii=False, indent=1)
         print("built", s["id"], info["duration"], flush=True)

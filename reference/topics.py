@@ -11,14 +11,16 @@ STORIES FROM REAL ENQUIRIES: bank/STORY_THEMES.md holds anonymised situations di
 companies, places, numbers or anything that could identify a person). Build scripts on those situations, always with
 invented names and changed details. Never put CRM details in the repo."""
 
-DIRS = {"co": "bank", "gst": "bank/gst", "inv": "bank/inv", "sui": "bank/sui", "sk": "bank/sk"}
+NEW7 = ["tm", "roc", "fssai", "iec", "nda", "cfa", "fp", "val"]   # added 19 Nov evening (val = company valuation, 19:14)
+DIRS = {"co": "bank", "gst": "bank/gst", "inv": "bank/inv", "sui": "bank/sui", "sk": "bank/sk", "ud": "bank/ud", **{t: f"bank/{t}" for t in NEW7}}
 # share of each stock target (reels, carousels, stories, posters) kept for each topic; together <= 1 keeps the
 # GitHub Pages site under its 1 GB limit. Company registration posts the most reels a day, so it keeps the biggest backup.
-SHARE = {"co": 0.4, "gst": 0.15, "inv": 0.15, "sui": 0.15, "sk": 0.15}
+SHARE = {"co": 0.11, **{t: 0.068 for t in ["gst", "inv", "sui", "sk", "ud"] + NEW7}}   # same as the worker's REEL_SHARE
 
 # general keywords (the worker's KW_TOPIC). Each post also gets its own unique keyword from build.KW_POOL.
 BASES = {"co": ["START", "NAME", "AFTER", "CHECKLIST"], "gst": ["GST", "LIMIT", "PENALTY"], "inv": ["INVEST", "TERMSHEET", "FUNDING"],
-         "sui": ["DPIIT", "BENEFITS"], "sk": ["KSUM", "GRANT"]}
+         "sui": ["DPIIT", "BENEFITS"], "sk": ["KSUM", "GRANT"], "ud": ["UDYAM", "MSME"],
+         "tm": ["TRADEMARK", "BRAND"], "roc": ["ROC", "FILING"], "fssai": ["FSSAI", "FOOD"], "iec": ["IEC", "EXPORT"], "nda": ["NDA", "SECRET"], "cfa": ["COFOUNDER", "VESTING"], "fp": ["PROJECTION", "FORECAST"], "val": ["VALUATION", "WORTH"]}
 ALL_BASES = {k for v in BASES.values() for k in v}
 
 # CTAs: (pill text, promise). The first word of the pill is the keyword.
@@ -32,7 +34,19 @@ CTA_DPIIT = ("DPIIT എന്ന് കമന്റ് ചെയ്യൂ", "ന
 CTA_BENEFITS = ("BENEFITS എന്ന് കമന്റ് ചെയ്യൂ", "റെക്കഗ്നിഷൻ കൊണ്ടുള്ള\nഗുണങ്ങൾ അയച്ചുതരാം")
 CTA_KSUM = ("KSUM എന്ന് കമന്റ് ചെയ്യൂ", "യുണീക്ക് ഐഡി ഗൈഡ്\nഅയച്ചുതരാം")
 CTA_GRANT = ("GRANT എന്ന് കമന്റ് ചെയ്യൂ", "ഗ്രാന്റിന് മുമ്പുള്ള\nചെക്ക്ലിസ്റ്റ് അയച്ചുതരാം")
-CTAS = {"gst": [CTA_GST, CTA_LIMIT, CTA_PENALTY], "inv": [CTA_INVEST, CTA_TERMSHEET, CTA_FUNDING], "sui": [CTA_DPIIT, CTA_BENEFITS], "sk": [CTA_KSUM, CTA_GRANT]}
+CTA_UDYAM = ("UDYAM എന്ന് കമന്റ് ചെയ്യൂ", "ഉദ്യം കൊണ്ടുള്ള\nഗുണങ്ങൾ അയച്ചുതരാം")
+CTA_MSME = ("MSME എന്ന് കമന്റ് ചെയ്യൂ", "മൈക്രോയോ സ്മോളോ എന്ന്\nനോക്കാനുള്ള ലിസ്റ്റ് അയച്ചുതരാം")
+_c = lambda kw, promise: (f"{kw} എന്ന് കമന്റ് ചെയ്യൂ", promise)
+CTA_TRADEMARK, CTA_BRAND = _c("TRADEMARK", "ബ്രാൻഡ് സുരക്ഷിതമാക്കാനുള്ള\nഗൈഡ് അയച്ചുതരാം"), _c("BRAND", "പേര് ആരും കോപ്പി\nചെയ്യാതിരിക്കാൻ ചെക്ക്ലിസ്റ്റ്")
+CTA_ROC, CTA_FILING = _c("ROC", "വർഷത്തെ ഫയലിംഗ്\nകലണ്ടർ അയച്ചുതരാം"), _c("FILING", "ബിസിനസ് ഇല്ലെങ്കിലും വേണ്ട\nഫയലിംഗുകൾ അയച്ചുതരാം")
+CTA_FSSAI, CTA_FOOD = _c("FSSAI", "ഏത് FSSAI വേണം എന്ന\nഗൈഡ് അയച്ചുതരാം"), _c("FOOD", "ഫുഡ് നിയമപരമായി വിൽക്കാൻ\nചെക്ക്ലിസ്റ്റ് അയച്ചുതരാം")
+CTA_IEC, CTA_EXPORT = _c("IEC", "IEC ഗൈഡ്\nഅയച്ചുതരാം"), _c("EXPORT", "ആദ്യ എക്സ്പോർട്ടിന് മുമ്പുള്ള\nചെക്ക്ലിസ്റ്റ് അയച്ചുതരാം")
+CTA_NDA, CTA_SECRET = _c("NDA", "നല്ല NDA-യിൽ വേണ്ടത്\nഅയച്ചുതരാം"), _c("SECRET", "ഐഡിയ പങ്കുവെക്കും മുമ്പ്\nചെക്ക്ലിസ്റ്റ് അയച്ചുതരാം")
+CTA_COFOUNDER, CTA_VESTING = _c("COFOUNDER", "കോ-ഫൗണ്ടർ എഗ്രിമെന്റിന്റെ\nചെക്ക്ലിസ്റ്റ് അയച്ചുതരാം"), _c("VESTING", "വെസ്റ്റിംഗ് എങ്ങനെ എന്ന്\nഅയച്ചുതരാം")
+CTA_PROJECTION, CTA_FORECAST = _c("PROJECTION", "ഇൻവെസ്റ്റർ നോക്കുന്നത് എന്ത്\nഎന്ന് അയച്ചുതരാം"), _c("FORECAST", "3 വർഷ ഫോർകാസ്റ്റ്\nഎങ്ങനെ എന്ന് അയച്ചുതരാം")
+CTA_VALUATION, CTA_WORTH = _c("VALUATION", "എപ്പോൾ, ഏത് രീതി എന്ന\nഗൈഡ് അയച്ചുതരാം"), _c("WORTH", "കമ്പനിയുടെ മൂല്യം എങ്ങനെ\nകണക്കാക്കുന്നു എന്ന് അയച്ചുതരാം")
+CTAS = {"val": [CTA_VALUATION, CTA_WORTH], "tm": [CTA_TRADEMARK, CTA_BRAND], "roc": [CTA_ROC, CTA_FILING], "fssai": [CTA_FSSAI, CTA_FOOD], "iec": [CTA_IEC, CTA_EXPORT],
+        "nda": [CTA_NDA, CTA_SECRET], "cfa": [CTA_COFOUNDER, CTA_VESTING], "fp": [CTA_PROJECTION, CTA_FORECAST], "ud": [CTA_UDYAM, CTA_MSME], "gst": [CTA_GST, CTA_LIMIT, CTA_PENALTY], "inv": [CTA_INVEST, CTA_TERMSHEET, CTA_FUNDING], "sui": [CTA_DPIIT, CTA_BENEFITS], "sk": [CTA_KSUM, CTA_GRANT]}
 
 SEGMENTS = {
     "co": ["freelancer", "cofounders", "proprietor", "salaried", "solo", "nri"],
@@ -60,6 +74,20 @@ SEGMENTS = {
            "returnee",         # Gulf returnees and NRIs starting a startup in Kerala
            "campus",           # students, IEDC / college incubator founders
            "women_founder"],   # women-led startups
+    # Udyam / MSME: small manufacturers and service businesses chasing payments, loans and tenders
+    "ud": ["manufacturer",     # small units: food processing, furniture, garments, printing, coir, rubber products
+           "service_unit",     # service businesses selling to companies: IT, agencies, repair, transport, catering
+           "trader_ud",        # shops / wholesalers (Udyam only for priority lending)
+           "loan_seeker",      # owners applying for a business loan
+           "supplier_unpaid"], # suppliers whose big buyers pay late
+    "tm": ["d2c_brand", "food_brand", "salon_clinic", "app_founder", "copied_brand"],
+    "roc": ["dormant_company", "new_company_roc", "late_filer", "llp_owner", "nri_director"],
+    "fssai": ["home_baker", "cloud_kitchen", "spice_exporter", "cafe_owner", "packaged_food"],
+    "iec": ["first_exporter", "importer", "spice_trade", "handicraft_export", "service_export"],
+    "nda": ["founder_pitching", "agency_client", "freelancer_nda", "vendor_supplier", "employee_nda"],
+    "cfa": ["friends_cofounders", "tech_nontech", "family_cofounders", "late_joiner", "remote_cofounder"],
+    "val": ["raising_round", "esop_plan", "partner_exit", "nri_share_issue", "share_transfer"],
+    "fp": ["investor_pitch", "bank_loan", "grant_application", "early_revenue", "pre_revenue"],
 }
 
 # Facts the scripts may use (checked Nov 2026; sources in the INSIGHTS notes). Nothing else, and never a service price.
@@ -113,3 +141,46 @@ FACTS_SK = """
 - idea grant: you may apply before incorporating, but the company and the Unique ID are needed before money is released
 - never state grant amounts or promise selection (amounts and calls change; the team checks the live call)
 """
+
+FACTS_UD = """
+- Udyam registration = the government's MSME registration (since 1 July 2020): online, Aadhaar-based, PAN (and GSTIN
+  where the business has one), self-declaration; no renewal, but keep details updated. Never mention any fee
+- classification since 1 Apr 2025, BOTH limits must be met: micro = investment up to Rs 2.5 crore and turnover up to
+  Rs 10 crore; small = Rs 25 crore and Rs 100 crore; medium = Rs 125 crore and Rs 500 crore (crossing either moves you up)
+- manufacturing and service micro / small units: buyers must pay within 15 days, or the agreed time up to 45 days; after
+  that they owe compound interest at 3x the RBI bank rate; complaints go to the MSME Samadhaan portal / facilitation
+  council; a buyer paying late loses the income-tax deduction until payment (section 43B(h))
+- retail and wholesale traders can register (since July 2021) but only for priority sector lending: NO 45-day protection
+- registration helps with priority sector lending, collateral-free loan schemes (CGTMSE) and preferences in government
+  tenders. Never promise a loan, subsidy or recovery
+"""
+
+# Facts for the seven topics added 19 Nov evening. The worker's NEWT holds the same facts for the DM bot.
+FACTS_TM = """trademark: filed with the Trade Marks Registry; TM symbol after filing, R symbol only after registration; 45 classes,
+file in the classes you trade in; objection reply within 30 days; opposition within 4 months of journal publication;
+valid 10 years, renewable; a company name approval does NOT protect a brand. Never promise registration or mention fees."""
+FACTS_ROC = """ROC (Pvt Ltd): AGM by 30 September; AOC-4 within 30 days of AGM; MGT-7/7A within 60 days of AGM; DIR-3 KYC for every
+director by 30 September; late fee Rs 100 per day per form, no cap; INC-20A within 180 days of incorporation; first
+auditor within 30 days; 3 years of non-filing can disqualify directors for 5 years and the company can be struck off;
+LLP: Form 11 by 30 May, Form 8 by 30 October; due even with zero business."""
+FACTS_FSSAI = """FSSAI: basic registration up to Rs 12 lakh turnover a year (home bakers too); state licence up to Rs 20 crore; central
+licence above that and for importers; 14-digit FSSAI number printed on packaged food; selling without it: penalty up to
+Rs 5 lakh and up to 6 months' imprisonment; valid 1-5 years, renew before expiry; delivery apps ask for the number."""
+FACTS_IEC = """IEC: 10-digit Import Export Code from DGFT linked to the business PAN; needed to import or export goods (customs and
+banks ask); one per PAN; never expires but must be updated online every year between April and June or it is
+deactivated; not needed for personal-use imports; service exporters need it to claim export benefits."""
+FACTS_NDA = """NDA: enforceable contract in India if properly drafted and stamped per the state's stamp law; one-way or mutual;
+define confidential information, exclusions (already public, independently developed), duration and remedies such as
+an injunction; cannot protect what is already public; many investors don't sign NDAs at pitch stage."""
+FACTS_CFA = """co-founder agreement: equity split, vesting (a common practice is 4 years with a 1-year cliff), roles and decisions,
+all IP assigned to the company, leaver/buy-back of unvested shares, dispute resolution; post-exit non-compete is
+generally not enforceable in India but confidentiality and non-solicit can be; mirror the share rights in the SHA and
+articles. Never decide the split."""
+FACTS_FP = """financial projections: investors, banks and grant panels ask for them; 3 years, month by month for year 1; revenue
+drivers (customers, price, growth), costs and hiring, P&L, cash flow, break-even, written assumptions; realistic and
+tied to traction (inflated numbers lose trust); banks may ask for a project report for loans. NEVER mention our fee."""
+FACTS_VAL = """company valuation: needed when raising investment, issuing ESOPs, transferring shares, a founder/partner exits,
+buy-backs, mergers, and for NRI/foreign investment (shares not below fair value by an accepted method, certified by a CA,
+SEBI-registered merchant banker or cost accountant); preferential allotment of shares needs a registered valuer's report;
+methods: discounted cash flow, comparable companies/deals, net asset value; early startups lean on comparables and
+projections; a valuation is for a specific purpose and date. NEVER state a value or our fee."""
