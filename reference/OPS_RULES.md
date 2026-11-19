@@ -9,6 +9,11 @@ While the account has fewer than 100 followers and KV `low_reach_mode` is not "0
 - **Topic split (19 Nov evening, 14 topics):** co 11%, and 6.8% each for val (company valuation, any purpose; prefix qv, keywords VALUATION/WORTH),  gst, inv, sui, sk, ud, tm (trademark), roc (ROC annual compliance), fssai, iec, nda, cfa (co-founder agreements), fp (financial projections) (REEL_SHARE). Folders bank/<topic>/; id prefixes tm, rc, fs, ie, nd, cf, fp; facts in factory/topics.py FACTS_*; DM texts in NEWT in the worker. Earlier split was, limited by each topic's built stock. Leftovers go to topics with stock. ud = Udyam (MSME), added 19 Nov: bank/ud/, ids start with "y".
 - **When the plan is set:** it is frozen once a day in KV `plan:<day>`, at the first cron tick after midnight.
 
+## Script-writer runs (19 Nov, after two runs wrote the same topics at once)
+- **Ops key:** if ~/.rl_ops_key is missing, recreate it from the setup line in the monitor task's instructions (list_triggers, "Monitor rejectionlist.kerala automation"). Never print or commit it. If that is not possible, say so in the summary and carry on with the manifest and bank counts.
+- **14 topics, not 5:** the refill prompt still lists 5. Use topics.DIRS and check_bank.py PREFIX: co, gst g, inv v, sui u, sk m, ud y, tm tm, roc rc, fssai fs, iec ie, nda nd, cfa cf, fp fp, val qv. Count scripts in bank/ too: the manifest lags for new topics.
+- **Another session may be writing at the same time:** git pull right before writing and again before committing; use the next free batchNN.py at that moment. Before writing for a topic, read every existing hook, situation and fact in that topic (including commits from the last few hours) and repeat none. If the push is rejected: pull --rebase, keep the other run's files, renumber yours, drop near-duplicates, re-run check_bank, push.
+
 ## Refill priority
 Reel scripts are the bottleneck.
 - **New topics first:** give gst, inv, sui and sk most of each run until each has 40+ unbuilt or unposted reel scripts. After that, keep every topic at 3+ days of its live share. 90/day x share = about 11 reels a day for co and about 6-7 for each other topic. Backup target per topic: 7+ days = ~50 scripts each.
@@ -45,3 +50,12 @@ If earlier runs were skipped (for example, Claude usage ran out), never assume t
 - **Spam:** repeated comments count once a day.
 - **How the pieces fit:** the factory renders the images from /public/shoutqueue (factory/shoutout.py); the worker posts them.
 - **Monitor checks:** shout-out posts went out, and nobody is named who said no.
+
+## Tips, news and corrections (owner, 19 Nov night)
+- Daily total = normal reels (reel-max ramp, now capped at 80 from 22 Nov) + 1 tip reel per topic (14) + up to 4 news / opportunity / correction reels. 80 + 14 + 4 = 98, under Instagram's 100 posts per 24 h (the shout-out post takes the last one). Empty tip or news slots post nothing.
+- Themes "tip", "news", "opportunity", "correction" are reserved: normal reel slots never use them, and the factory builds them before or alongside normal reels (news first, tips interleaved, 2 tips ready per topic).
+- Tips: quick checks, calendar reminders, checklists, comparisons, "what if" answers. One per topic per day. Facts only from topics.py. Files bank/<topic>/batch_tipsNN.py, theme="tip". The refill writer keeps at least 10 unposted tip scripts per topic.
+- News (watcher task, 4 runs a day): same-day posting only from Tier A official sources (government sites, plus ICAI / ICSI when they link the government circular). News reports alone wait; rumours never. Two official sources disagree: post nothing, tell the owner. Every news item carries source, as_of and expires; it is never posted after expires.
+- Opportunity: a new government scheme / grant call / programme window: what it is, who is eligible, the official deadline. Never promise selection, funding or returns; never investment advice.
+- Corrections: if a posted item was wrong or is overridden, post a correction reel (first in the news queue), add a correction comment on the wrong reel (/ops/correct), fix any unposted scripts repeating it, tell the owner. Never delete the wrong reel. Instagram's API cannot edit a published caption; the owner can edit it by hand.
+- Topics never clash: a news item that changes a fact updates FACTS_ in topics.py in the same commit, so tips and normal reels written afterwards use the new fact.
